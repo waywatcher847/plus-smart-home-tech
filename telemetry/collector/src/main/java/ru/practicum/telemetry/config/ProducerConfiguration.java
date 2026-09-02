@@ -1,30 +1,34 @@
 package ru.practicum.telemetry.config;
 
-import org.apache.avro.specific.SpecificRecordBase;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.kafka.DefaultKafkaProducerFactoryCustomizer;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.ssl.SslBundles;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.avro.specific.SpecificRecordBase;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.practicum.telemetry.TelemetryAvroSerializer;
 
-import java.util.Map;
+import java.util.Properties;
 
 @Configuration
 public class ProducerConfiguration {
 
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.producer.key-serializer}")
+    private String keySerializer;
+
     @Bean
-    public Producer<String, SpecificRecordBase> kafkaProducer(
-            KafkaProperties kafkaProperties,
-            ObjectProvider<DefaultKafkaProducerFactoryCustomizer> customizers) {
+    public Producer<String, SpecificRecordBase> kafkaProducer() {
+        Properties config = new Properties();
 
-        Map<String, Object> props = kafkaProperties.buildProducerProperties((SslBundles) customizers);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, TelemetryAvroSerializer.class.getName());
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer);
 
-        return new KafkaProducer<>(props);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, TelemetryAvroSerializer.class.getName());
+
+        return new KafkaProducer<>(config);
     }
 }
