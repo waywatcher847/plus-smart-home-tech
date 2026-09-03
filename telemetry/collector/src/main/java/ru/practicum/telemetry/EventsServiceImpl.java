@@ -22,10 +22,10 @@ public class EventsServiceImpl implements EventsService {
     private final KafkaEventProducer kafkaEventProducer;
 
     @Value("${telemetry.topic.sensors}")
-    private final String sensorsTopic;
+    private String sensorsTopic;
 
     @Value("${telemetry.topic.hubs}")
-    private final String hubsTopic;
+    private String hubsTopic;
 
 
     @Override
