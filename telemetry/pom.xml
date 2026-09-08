@@ -16,5 +16,4 @@
         <module>serialization</module>
         <module>collector</module>
     </modules>
-
 </project>
