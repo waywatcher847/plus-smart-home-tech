@@ -15,9 +15,7 @@ import ru.practicum.telemetry.repositories.ScenarioRepository;
 import ru.practicum.telemetry.repositories.SensorRepository;
 import ru.yandex.practicum.kafka.telemetry.event.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -112,9 +110,9 @@ public class DataProcessorServiceImpl implements DataProcessorService {
     private void setScenarioCondition(Scenario scenario,
                                       List<ScenarioConditionAvro> scenarioConditionsAvro,
                                       Map<String, Sensor> sensorsMap) {
-        List<ScenarioCondition> scenarioConditions = scenarioConditionsAvro.stream()
+        Set<ScenarioCondition> scenarioConditions = scenarioConditionsAvro.stream()
                 .map(conditionAvro -> createScenarioCondition(conditionAvro, scenario, sensorsMap))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .collect(Collectors.toCollection(HashSet::new));
 
         scenario.setConditions(scenarioConditions);
     }
@@ -187,9 +185,9 @@ public class DataProcessorServiceImpl implements DataProcessorService {
     private void setScenarioAction(Scenario scenario,
                                    List<DeviceActionAvro> deviceActionAvro,
                                    Map<String, Sensor> sensorsMap) {
-        List<ScenarioAction> scenarioActions = deviceActionAvro.stream()
+        Set<ScenarioAction> scenarioActions = deviceActionAvro.stream()
                 .map(actionAvro -> createScenarioAction(actionAvro, scenario, sensorsMap))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .collect(Collectors.toCollection(HashSet::new));
 
         scenario.setActions(scenarioActions);
     }
