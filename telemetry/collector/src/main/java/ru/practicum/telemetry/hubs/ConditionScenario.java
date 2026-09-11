@@ -3,7 +3,8 @@ package ru.practicum.telemetry.hubs;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import ru.practicum.telemetry.hubs.types.ConditionType;
+import ru.practicum.telemetry.enums.ConditionOperation;
+import ru.practicum.telemetry.enums.ConditionType;
 
 @Getter
 @Setter

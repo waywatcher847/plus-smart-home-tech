@@ -1,6 +1,5 @@
 package ru.practicum.telemetry;
 
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.specific.SpecificRecordBase;
@@ -17,7 +16,7 @@ import ru.practicum.telemetry.sensors.SensorEvent;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class EventsServiceImpl implements EventsService {
+public class KafkaSenderServiceImpl implements KafkaSenderService {
     private final Producer<String, SpecificRecordBase> producer;
     private final KafkaEventProducer kafkaEventProducer;
 
@@ -63,7 +62,7 @@ public class EventsServiceImpl implements EventsService {
                 log.error("{} event fail. id {}. topic {}: {}",
                         eventType, eventId, topic, exception.getMessage(), exception);
             } else {
-                log.debug("{} event is sent", eventType);
+                log.debug("{} event was sent", eventType);
             }
         };
     }
