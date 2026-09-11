@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@Getter
 public class SnapshotProcessorServiceImpl implements SnapshotProcessorService {
     private final HubRouterControllerGrpc.HubRouterControllerBlockingStub hubRouterClient;
     private final Map<Class<?>, SnapshotHandler> snapshotHandlers;
@@ -60,7 +59,6 @@ public class SnapshotProcessorServiceImpl implements SnapshotProcessorService {
         sendActionsToHub(hubId, actions);
     }
 
-    @Transactional(readOnly = true)
     protected List<DeviceActionRequest> buildActionsForSnapshot(
             String hubId, Map<String, SensorStateAvro> sensorsState) {
 

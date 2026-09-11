@@ -121,8 +121,7 @@ public class HubEventProcessor implements Runnable {
         try {
             handler.handle(hubEvent);
         } catch (Exception e) {
-            log.error("Handler failed for event type={}", payloadClassName, e);
-            throw e;  // let outer catch log with offset info
+            throw e;
         }
     }
 }

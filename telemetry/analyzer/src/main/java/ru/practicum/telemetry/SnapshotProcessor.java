@@ -50,26 +50,19 @@ public class SnapshotProcessor {
                 ConsumerRecords<String, SpecificRecordBase> records =
                         consumer.poll(Duration.ofMillis(consumeTimeoutMs));
 
-                boolean batchFailed = false;
-
                 for (ConsumerRecord<String, SpecificRecordBase> record : records) {
                     try {
                         processRecord(record);
                     } catch (Exception e) {
                         log.error("Failed to process snapshot topic={} partition={} offset={} key={}",
                                 record.topic(), record.partition(), record.offset(), record.key(), e);
-                        batchFailed = true;
                         break;
                     }
                 }
-                if (!batchFailed) {
-                    try {
-                        consumer.commitSync();
-                    } catch (CommitFailedException e) {
-                        log.error("Offset commit failed", e);
-                    }
-                } else {
-                    log.warn("Batch processing failed, offsets not committed — records will be reprocessed");
+                try {
+                    consumer.commitSync();
+                } catch (CommitFailedException e) {
+                    log.error("Offset commit failed", e);
                 }
             }
         } catch (WakeupException e) {
