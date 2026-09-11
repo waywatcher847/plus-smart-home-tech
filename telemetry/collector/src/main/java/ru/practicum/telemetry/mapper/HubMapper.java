@@ -2,11 +2,13 @@ package ru.practicum.telemetry.mapper;
 
 import com.google.protobuf.Timestamp;
 import org.apache.avro.specific.SpecificRecordBase;
+import ru.practicum.telemetry.enums.ActionType;
+import ru.practicum.telemetry.enums.ConditionOperation;
+import ru.practicum.telemetry.enums.ConditionType;
+import ru.practicum.telemetry.enums.EnumMapper;
 import ru.practicum.telemetry.hubs.*;
 import ru.practicum.telemetry.hubs.events.*;
 import ru.practicum.telemetry.hubs.events.HubEvent;
-import ru.practicum.telemetry.hubs.types.ActionType;
-import ru.practicum.telemetry.hubs.types.ConditionType;
 import ru.practicum.telemetry.hubs.types.DeviceType;
 import ru.practicum.telemetry.hubs.types.HubEventType;
 import ru.yandex.practicum.grpc.telemetry.event.*;
@@ -14,6 +16,7 @@ import ru.yandex.practicum.kafka.telemetry.event.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public class HubMapper {
     public static SpecificRecordBase toAvro(HubEvent hubEvent) {
@@ -30,7 +33,7 @@ public class HubMapper {
             return mapScenarioRemoved((ScenarioRemovedEvent) hubEvent);
         }
 
-        throw new IllegalArgumentException("unknown hub " + hubEvent.getClass());
+        throw new IllegalArgumentException("unknown hubEvent " + hubEvent.getClass());
     }
 
     private static SpecificRecordBase mapDeviceAdded(DeviceAddedEvent e) {
@@ -94,36 +97,57 @@ public class HubMapper {
         hubEventAvro.setPayload(payload);
         return hubEventAvro;
     }
+
     private static void setHubEventFields(HubEvent hubEvent, HubEventProto hubEventProto) {
         Timestamp timestamp = hubEventProto.getTimestamp();
         Instant instant = Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos());
+
         hubEvent.setHubId(hubEventProto.getHubId());
         hubEvent.setTimestamp(instant);
     }
 
+    public static HubEvent mapToDeviceAddedEvent(HubEventProto event) {
+        DeviceAddedEventProto deviceAddedEventProto = event.getDeviceAdded();
+        DeviceAddedEvent deviceAddedEvent = new DeviceAddedEvent();
+        setHubEventFields(deviceAddedEvent, event);
+        deviceAddedEvent.setId(deviceAddedEventProto.getId());
+        deviceAddedEvent.setDeviceType(toDeviceType(deviceAddedEventProto.getType()));
+        return deviceAddedEvent;
+    }
+
     private static DeviceType toDeviceType(DeviceTypeProto typeProto) {
-        if (typeProto.name().equals(DeviceType.CLIMATE_SENSOR.name())) {
-            return DeviceType.CLIMATE_SENSOR;
-        } else if (typeProto.name().equals(DeviceType.SWITCH_SENSOR.name())) {
-            return DeviceType.SWITCH_SENSOR;
-        } else if (typeProto.name().equals(DeviceType.TEMPERATURE_SENSOR.name())) {
-            return DeviceType.TEMPERATURE_SENSOR;
-        } else if (typeProto.name().equals(DeviceType.MOTION_SENSOR.name())) {
-            return DeviceType.MOTION_SENSOR;
-        } else if (typeProto.name().equals(DeviceType.LIGHT_SENSOR.name())) {
-            return DeviceType.LIGHT_SENSOR;
+        Optional<DeviceType> deviceType = EnumMapper.toAppEnum(DeviceType.values(), typeProto.name());
+
+        if (deviceType.isPresent()) {
+            return deviceType.get();
         } else {
-            throw new IllegalArgumentException("unknown type " + typeProto.getClass());
+            throw new IllegalArgumentException("unknown DeviceType " + typeProto.name());
         }
     }
 
-    private static List<ConditionScenario> toConditionScenario(List<ScenarioConditionProto> conditions) {
+    public static HubEvent mapToDeviceRemovedEvent(HubEventProto event) {
+        DeviceRemovedEventProto deviceRemovedEventProto = event.getDeviceRemoved();
+        DeviceRemovedEvent deviceRemovedEvent = new DeviceRemovedEvent();
+        setHubEventFields(deviceRemovedEvent, event);
+        deviceRemovedEvent.setId(deviceRemovedEventProto.getId());
+        return deviceRemovedEvent;
+    }
+
+    public static HubEvent mapToScenarioAddedEvent(HubEventProto event) {
+        ScenarioAddedEventProto scenarioAddedEventProto = event.getScenarioAdded();
+        ScenarioAddedEvent scenarioAddedEvent = new ScenarioAddedEvent();
+        setHubEventFields(scenarioAddedEvent, event);
+        scenarioAddedEvent.setName(scenarioAddedEventProto.getName());
+        scenarioAddedEvent.setConditions(toScenarioCondition(scenarioAddedEventProto.getConditionList()));
+        scenarioAddedEvent.setActions(toDeviceActions(scenarioAddedEventProto.getActionList()));
+        return scenarioAddedEvent;
+    }
+
+    private static List<ConditionScenario> toScenarioCondition(List<ScenarioConditionProto> conditions) {
         return conditions.stream()
                 .map(conditionProto -> {
                     var condition = new ConditionScenario();
-
                     condition.setSensorId(conditionProto.getSensorId());
-
                     condition.setType(toConditionType(conditionProto.getType()));
                     condition.setOperation(toConditionOperation(conditionProto.getOperation()));
                     condition.setValue(getValueField(conditionProto));
@@ -133,32 +157,22 @@ public class HubMapper {
     }
 
     private static ConditionType toConditionType(ConditionTypeProto condition) {
-        if (condition.name().equals(ConditionType.MOTION.name())) {
-            return ConditionType.MOTION;
-        } else if (condition.name().equals(ConditionType.LUMINOSITY.name())) {
-            return ConditionType.TEMPERATURE;
-        } else if (condition.name().equals(ConditionType.CO2LEVEL.name())) {
-            return ConditionType.LUMINOSITY;
-        } else if (condition.name().equals(ConditionType.SWITCH.name())) {
-            return ConditionType.SWITCH;
-        } else if (condition.name().equals(ConditionType.TEMPERATURE.name())) {
-            return ConditionType.CO2LEVEL;
-        } else if (condition.name().equals(ConditionType.HUMIDITY.name())) {
-            return ConditionType.HUMIDITY;
+        Optional<ConditionType> conditionType = EnumMapper.toAppEnum(ConditionType.values(), condition.name());
+
+        if (conditionType.isPresent()) {
+            return conditionType.get();
         } else {
-            throw new IllegalArgumentException("unknown condition type " + condition.getClass());
+            throw new IllegalArgumentException("unknown conditionType " + condition.name());
         }
     }
 
     private static ConditionOperation toConditionOperation(ConditionOperationProto operation) {
-        if (operation.name().equals(ConditionOperation.EQUALS.name())) {
-            return ConditionOperation.EQUALS;
-        } else if (operation.name().equals(ConditionOperation.LOWER_THAN.name())) {
-            return ConditionOperation.LOWER_THAN;
-        } else if (operation.name().equals(ConditionOperation.GREATER_THAN.name())) {
-            return ConditionOperation.GREATER_THAN;
+        Optional<ConditionOperation> conditionOperation = EnumMapper.toAppEnum(ConditionOperation.values(), operation.name());
+
+        if (conditionOperation.isPresent()) {
+            return conditionOperation.get();
         } else {
-            throw new IllegalArgumentException("unknown operation " + operation.getClass());
+            throw new IllegalArgumentException("unknown ConditionOperation " + operation.name());
         }
     }
 
@@ -175,16 +189,12 @@ public class HubMapper {
     }
 
     private static ActionType toActionType(ActionTypeProto actionTypeProto) {
-        if (actionTypeProto.name().equals(ActionType.ACTIVATE.name())) {
-            return ActionType.ACTIVATE;
-        } else if (actionTypeProto.name().equals(ActionType.INVERSE.name())) {
-            return ActionType.INVERSE;
-        } else if (actionTypeProto.name().equals(ActionType.DEACTIVATE.name())) {
-            return ActionType.DEACTIVATE;
-        } else if (actionTypeProto.name().equals(ActionType.SET_VALUE.name())) {
-            return ActionType.SET_VALUE;
+        Optional<ActionType> actionType = EnumMapper.toAppEnum(ActionType.values(), actionTypeProto.name());
+
+        if (actionType.isPresent()) {
+            return actionType.get();
         } else {
-            throw new IllegalArgumentException("unknown action type " + actionTypeProto.getClass());
+            throw new IllegalArgumentException("unknown ActionType " + actionTypeProto.getClass());
         }
     }
 
@@ -194,44 +204,16 @@ public class HubMapper {
         } else if (conditionProto.hasIntValue()) {
             return conditionProto.getIntValue();
         } else {
-            throw new IllegalArgumentException("unknown value" + conditionProto.getClass());
+            return null;
         }
     }
 
-    public static HubEvent toHubEvent(HubEventProto hubEventProto) {
-        HubEventProto.PayloadCase payloadCase = hubEventProto.getPayloadCase();
-
-        switch (payloadCase) {
-            case DEVICE_REMOVED:
-                DeviceRemovedEventProto deviceRemovedEventProto = hubEventProto.getDeviceRemoved();
-                DeviceRemovedEvent deviceRemovedEvent = new DeviceRemovedEvent();
-                setHubEventFields(deviceRemovedEvent, hubEventProto);
-                deviceRemovedEvent.setId(deviceRemovedEventProto.getId());
-                return deviceRemovedEvent;
-            case DEVICE_ADDED:
-                DeviceAddedEventProto deviceAddedEventProto = hubEventProto.getDeviceAdded();
-                DeviceAddedEvent deviceAddedEvent = new DeviceAddedEvent();
-                setHubEventFields(deviceAddedEvent, hubEventProto);
-                deviceAddedEvent.setId(deviceAddedEventProto.getId());
-                deviceAddedEvent.setDeviceType(toDeviceType(deviceAddedEventProto.getType()));
-                return deviceAddedEvent;
-            case SCENARIO_ADDED:
-                ScenarioAddedEventProto scenarioAddedEventProto = hubEventProto.getScenarioAdded();
-                ScenarioAddedEvent scenarioAddedEvent = new ScenarioAddedEvent();
-                setHubEventFields(scenarioAddedEvent, hubEventProto);
-                scenarioAddedEvent.setName(scenarioAddedEventProto.getName());
-                scenarioAddedEvent.setConditions(toConditionScenario(scenarioAddedEventProto.getConditionList()));
-                scenarioAddedEvent.setActions(toDeviceActions(scenarioAddedEventProto.getActionList()));
-                return scenarioAddedEvent;
-            case SCENARIO_REMOVED:
-                ScenarioRemovedEventProto scenarioRemovedEventProto = hubEventProto.getScenarioRemoved();
-                ScenarioRemovedEvent scenarioRemovedEvent = new ScenarioRemovedEvent();
-                setHubEventFields(scenarioRemovedEvent, hubEventProto);
-                scenarioRemovedEvent.setName(scenarioRemovedEventProto.getName());
-                return scenarioRemovedEvent;
-            default:
-                throw new IllegalArgumentException("Unknown hub type " + hubEventProto.getClass());
-        }
+    public static HubEvent mapToScenarioRemovedEvent(HubEventProto event) {
+        ScenarioRemovedEventProto scenarioRemovedEventProto = event.getScenarioRemoved();
+        ScenarioRemovedEvent scenarioRemovedEvent = new ScenarioRemovedEvent();
+        setHubEventFields(scenarioRemovedEvent, event);
+        scenarioRemovedEvent.setName(scenarioRemovedEventProto.getName());
+        return scenarioRemovedEvent;
     }
 
 }

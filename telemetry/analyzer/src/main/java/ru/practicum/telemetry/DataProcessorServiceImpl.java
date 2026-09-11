@@ -18,7 +18,6 @@ import ru.yandex.practicum.kafka.telemetry.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -147,11 +146,15 @@ public class DataProcessorServiceImpl implements DataProcessorService {
     }
 
     private Condition formCondition(ScenarioConditionAvro conditionAvro) {
+
         ConditionType conditionType = EnumMapper.toAppEnum(ConditionType.values(), conditionAvro.getType().name())
                 .orElseThrow(() -> new IllegalArgumentException("unknown condition type " + conditionAvro.getType().name()));
 
         ConditionOperation conditionOperation = EnumMapper.toAppEnum(ConditionOperation.values(), conditionAvro.getOperation().name())
-                .orElseThrow(() -> new IllegalArgumentException("unknown condition operation " + conditionAvro.getType().name()));;
+                .orElseThrow(() -> new IllegalArgumentException("unknown condition operation " + conditionAvro.getOperation().name()));;
+
+        log.debug("Mapping Avro condition type: {} -> App enum: {}",
+                conditionAvro.getType().name(), conditionType.name());
 
         Condition condition = Condition.builder()
                 .type(conditionType)

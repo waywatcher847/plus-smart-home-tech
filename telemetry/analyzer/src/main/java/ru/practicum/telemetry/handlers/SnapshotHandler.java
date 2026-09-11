@@ -6,5 +6,5 @@ import ru.yandex.practicum.kafka.telemetry.event.SensorStateAvro;
 public interface SnapshotHandler {
     Class<?> getSensorDataClass();
 
-    int handle(ConditionType conditionType, SensorStateAvro state);
+    Integer handle(ConditionType conditionType, SensorStateAvro sensorsState);
 }

@@ -15,17 +15,17 @@ public class ScenarioAction {
     private ScenarioActionId id;
 
     @MapsId("scenarioId")
-    @JoinColumn(name = "scenario_id")
     @ManyToOne
+    @JoinColumn(name = "scenario_id")
     private Scenario scenario;
 
     @MapsId("sensorId")
-    @JoinColumn(name = "sensor_id")
     @ManyToOne
+    @JoinColumn(name = "sensor_id")
     private Sensor sensor;
 
     @MapsId("actionId")
-    @JoinColumn(name = "action_id")
     @ManyToOne
+    @JoinColumn(name = "action_id")
     private Action action;
 }

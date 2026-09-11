@@ -86,13 +86,20 @@ public class SnapshotProcessorServiceImpl implements SnapshotProcessorService {
         SensorStateAvro state = sensorsState.get(sensor.getId());
         log.debug("sensor: {}, condition: {}, conditionType: {}, state: {}", sensor, condition, conditionType, state);
 
+
         if (state == null) {
-            log.debug("state = null");
+            log.debug("state = null for sensorId={}", sensor.getId());
+            return false;
+        }
+
+        Integer sensorsData = getSensorsData(conditionType, state);
+
+        if (sensorsData == null) {
+            log.debug("ConditionType {} is not supported by the actual sensor data type. Condition failed.", conditionType);
             return false;
         }
 
         int conditionValue = condition.getValue() != null ? condition.getValue() : 0;
-        int sensorsData = getSensorsData(conditionType, state);
         ConditionOperation operation = condition.getOperation();
         log.debug("conditionValue: {}, sensorsData: {}, operation: {}", conditionValue, sensorsData, operation);
 
@@ -101,17 +108,15 @@ public class SnapshotProcessorServiceImpl implements SnapshotProcessorService {
         return comparisonResult;
     }
 
-    private int getSensorsData(ConditionType conditionType, SensorStateAvro state) {
+    private Integer getSensorsData(ConditionType conditionType, SensorStateAvro state) {
         log.trace("getSensorsData {}, {}", conditionType, state);
         Class<?> sensorClass = state.getData().getClass();
 
         if (snapshotHandlers.containsKey(sensorClass)) {
-            int sensorsData = snapshotHandlers.get(sensorClass).handle(conditionType, state);
-            log.debug("{} sensorsData: {}", snapshotHandlers.get(sensorClass), sensorsData);
-            return sensorsData;
+            return snapshotHandlers.get(sensorClass).handle(conditionType, state);
         } else {
-            log.warn("unknown sensor {}", sensorClass);
-            throw new IllegalArgumentException("unknown sensor " + sensorClass);
+            log.warn("Unknown sensor class: {}", sensorClass);
+            return null;
         }
     }
 
