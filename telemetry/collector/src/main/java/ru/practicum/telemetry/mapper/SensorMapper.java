@@ -126,4 +126,51 @@ public class SensorMapper {
                 throw new IllegalArgumentException("unknown SENSOR " + sensorEventProto.getClass());
         }
     }
+
+    public static SensorEvent mapToTemperatureSensorEvent(SensorEventProto event) {
+        TemperatureSensorProto temperatureSensorProto = event.getTemperatureSensor();
+        TemperatureSensorEvent temperatureSensorEvent = new TemperatureSensorEvent();
+        setSensorEventFields(temperatureSensorEvent, event);
+        temperatureSensorEvent.setTemperatureC(temperatureSensorProto.getTemperatureC());
+        temperatureSensorEvent.setTemperatureF(temperatureSensorProto.getTemperatureF());
+        return temperatureSensorEvent;
+    }
+
+    public static SensorEvent mapToClimateSensorEvent(SensorEventProto event) {
+        ClimateSensorProto climateSensorProto = event.getClimateSensor();
+        ClimateSensorEvent climateSensorEvent = new ClimateSensorEvent();
+        setSensorEventFields(climateSensorEvent, event);
+        climateSensorEvent.setTemperatureC(climateSensorProto.getTemperatureC());
+        climateSensorEvent.setHumidity(climateSensorProto.getHumidity());
+        climateSensorEvent.setCo2Level(climateSensorProto.getCo2Level());
+        return climateSensorEvent;
+    }
+
+    public static SensorEvent mapToLightSensorEvent(SensorEventProto event) {
+        LightSensorProto lightSensorProto = event.getLightSensor();
+        LightSensorEvent lightSensorEvent = new LightSensorEvent();
+        setSensorEventFields(lightSensorEvent, event);
+        lightSensorEvent.setLinkQuality(lightSensorProto.getLinkQuality());
+        lightSensorEvent.setLuminosity(lightSensorProto.getLuminosity());
+        return lightSensorEvent;
+    }
+
+    public static SensorEvent mapToMotionSensorEvent(SensorEventProto event) {
+        MotionSensorProto motionSensorProto = event.getMotionSensor();
+        MotionSensorEvent motionSensorEvent = new MotionSensorEvent();
+        setSensorEventFields(motionSensorEvent, event);
+        motionSensorEvent.setLinkQuality(motionSensorProto.getLinkQuality());
+        motionSensorEvent.setMotion(motionSensorProto.getMotion());
+        motionSensorEvent.setVoltage(motionSensorProto.getVoltage());
+        return motionSensorEvent;
+    }
+
+    public static SensorEvent mapToSwitchSensorEvent(SensorEventProto event) {
+        SwitchSensorProto switchSensorProto = event.getSwitchSensor();
+        SwitchSensorEvent switchSensorEvent = new SwitchSensorEvent();
+        setSensorEventFields(switchSensorEvent, event);
+        switchSensorEvent.setState(switchSensorProto.getState());
+        return switchSensorEvent;
+    }
+
 }

@@ -1,4 +1,4 @@
-package ru.practicum.telemetry.hubs;
+package ru.practicum.telemetry.enums;
 
 import ru.yandex.practicum.kafka.telemetry.event.ConditionOperationAvro;
 
