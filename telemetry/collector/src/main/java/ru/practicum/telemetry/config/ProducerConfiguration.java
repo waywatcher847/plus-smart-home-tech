@@ -20,6 +20,9 @@ public class ProducerConfiguration {
     @Value("${spring.kafka.producer.key-serializer}")
     private String keySerializer;
 
+    @Value("${spring.kafka.producer.client_id_config}")
+    private String clientIdConfig;
+
     @Bean
     public Producer<String, SpecificRecordBase> kafkaProducer() {
         Properties config = new Properties();
@@ -28,6 +31,8 @@ public class ProducerConfiguration {
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer);
 
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, TelemetryAvroSerializer.class.getName());
+
+        config.put(ProducerConfig.CLIENT_ID_CONFIG, clientIdConfig);
 
         return new KafkaProducer<>(config);
     }
