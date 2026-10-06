@@ -13,3 +13,4 @@ spring:
           search-locations:
             - file:../config-repo
             - file:../config-repo/telemetry
+            - file:../config-repo/commerce
