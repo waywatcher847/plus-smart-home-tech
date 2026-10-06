@@ -11,6 +11,6 @@ spring:
       server:
         native:
           search-locations:
-            - file:../config-repo
-            - file:../config-repo/telemetry
-            - file:../config-repo/commerce
+            - file:./infra/config-repo
+            - file:./infra/config-repo/telemetry
+            - file:./infra/config-repo/commerce
