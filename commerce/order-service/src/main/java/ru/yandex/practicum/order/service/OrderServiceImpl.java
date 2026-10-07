@@ -27,12 +27,24 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDto createOrder(CreateOrderRequest request) {
-        log.trace("createOrder{}", request);
-        Order order = getOrder(request);
+        log.trace("createOrder {}", request);
+
+        BigDecimal totalPrice = request.items().stream()
+                .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Order order = OrderMapper.toOrder(request, totalPrice);
+
+        for (OrderItemRequest itemRequest : request.items()) {
+            OrderItem orderItem = OrderItemMapper.toOrderItem(itemRequest);
+            orderItem.setOrder(order);
+            order.getItems().add(orderItem);
+        }
+
         Order savedOrder = orderRepository.save(order);
-        log.debug("Сохранен заказ {}", savedOrder);
-        List<OrderItemDto> savedOrderItemDtos = getOrderItemDtoList(savedOrder);
-        return OrderMapper.toOrderDto(savedOrder, savedOrderItemDtos);
+        log.debug("OK {}", savedOrder);
+
+        List<OrderItemDto> savedOrderItemList = getOrderItemDtoList(savedOrder);
+        return OrderMapper.toOrderDto(savedOrder, savedOrderItemList);
     }
 
     @Override
@@ -44,8 +56,8 @@ public class OrderServiceImpl implements OrderService {
                     return new NotFoundException(String.format("id %d NotFound", orderId));
                 });
         log.debug("OK {}", order);
-        List<OrderItemDto> orderItemDtos = getOrderItemDtoList(order);
-        return OrderMapper.toOrderDto(order, orderItemDtos);
+        List<OrderItemDto> orderItemList = getOrderItemDtoList(order);
+        return OrderMapper.toOrderDto(order, orderItemList);
     }
 
     @Override
@@ -63,22 +75,6 @@ public class OrderServiceImpl implements OrderService {
                     return OrderMapper.toOrderDto(order, orderItems);
                 })
                 .toList();
-    }
-
-    private Order getOrder(CreateOrderRequest request) {
-        BigDecimal totalPrice = request.items().stream()
-                .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        Order order = OrderMapper.toOrder(request, totalPrice);
-
-        for (OrderItemRequest itemRequest : request.items()) {
-            OrderItem orderItem = OrderItemMapper.toOrderItem(itemRequest);
-            orderItem.setOrder(order);
-            order.getItems().add(orderItem);
-        }
-
-        return order;
     }
 
     private List<OrderItemDto> getOrderItemDtoList(Order order) {

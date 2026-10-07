@@ -3,6 +3,7 @@ package ru.yandex.practicum.inventory.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.inventory.dto.InventoryDto;
 import ru.yandex.practicum.inventory.dto.ReserveRequest;
 import ru.yandex.practicum.inventory.dto.ReserveResponse;
@@ -19,10 +20,12 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class InventoryServiceImpl implements InventoryService {
     private final InventoryRepository inventoryRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryDto> getAllInventoryUnits() {
         log.trace("getAllInventoryUnits");
         List<InventoryUnit> inventoryUnits = inventoryRepository.findAll();
@@ -84,12 +87,12 @@ public class InventoryServiceImpl implements InventoryService {
         inventoryUnit.setReservedQuantity(inventoryUnit.getReservedQuantity() + request.quantity());
         inventoryUnit.setAvailableQuantity(inventoryUnit.getAvailableQuantity() - request.quantity());
         InventoryUnit savedInventoryUnit = inventoryRepository.save(inventoryUnit);
-        inventoryRepository.flush();
         log.debug("OK, {}", savedInventoryUnit);
         return new ReserveResponse(true, savedInventoryUnit.getAvailableQuantity(), "OK");
     }
 
     @Override
+    @Transactional(readOnly = true)
     public InventoryDto getRemainingProductQuantities(long productId) {
         log.trace("getRemainingProductQuantities {}", productId);
         InventoryUnit inventoryUnit = downloadInventoryUnit(productId);
