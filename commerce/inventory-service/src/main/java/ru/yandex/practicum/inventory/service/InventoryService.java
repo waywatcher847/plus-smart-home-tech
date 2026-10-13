@@ -1,9 +1,6 @@
 package ru.yandex.practicum.inventory.service;
 
-import ru.yandex.practicum.inventory.dto.InventoryDto;
-import ru.yandex.practicum.inventory.dto.ReserveRequest;
-import ru.yandex.practicum.inventory.dto.ReserveResponse;
-import ru.yandex.practicum.inventory.dto.UpdateInventoryRequest;
+import ru.yandex.practicum.inventory.dto.*;
 
 import java.util.List;
 
@@ -17,4 +14,6 @@ public interface InventoryService {
     ReserveResponse createProductReservation(ReserveRequest request);
 
     InventoryDto getRemainingProductQuantities(long productId);
+
+    ReserveResponse releaseProductReservation(ReleaseRequest request);
 }
