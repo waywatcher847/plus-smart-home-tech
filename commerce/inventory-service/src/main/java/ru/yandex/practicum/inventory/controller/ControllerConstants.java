@@ -5,4 +5,5 @@ public class ControllerConstants {
     public static final String URL_INVENTORY = "/inventory";
     public static final String URL_RESERVE = "/reserve";
     public static final String ID_PRODUCT = "/{productId}";
+    public static final String URL_RELEASE = "/release";
 }

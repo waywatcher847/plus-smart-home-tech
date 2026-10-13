@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.inventory.dto.InventoryDto;
-import ru.yandex.practicum.inventory.dto.ReserveRequest;
-import ru.yandex.practicum.inventory.dto.ReserveResponse;
-import ru.yandex.practicum.inventory.dto.UpdateInventoryRequest;
+import ru.yandex.practicum.inventory.dto.*;
 import ru.yandex.practicum.inventory.entity.InventoryUnit;
 import ru.yandex.practicum.inventory.exception.AlreadyExistsException;
 import ru.yandex.practicum.inventory.exception.InsufficientStockException;
@@ -81,7 +78,9 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (request.quantity() > inventoryUnit.getAvailableQuantity()) {
             log.warn("CANCELED ID({}) request.quantity({}) > inventoryUnit.getAvailableQuantity({})", inventoryUnit.getProductId(), request.quantity(), inventoryUnit.getAvailableQuantity());
-            throw new InsufficientStockException(String.format("CANCELED ID(%d) request.quantity(%d) > inventoryUnit.getAvailableQuantity(%d)", inventoryUnit.getProductId(), request.quantity(), inventoryUnit.getAvailableQuantity()));
+            throw new InsufficientStockException(String.format("CANCELED ID(%d) request.quantity(%d) > inventoryUnit.getAvailableQuantity(%d)",
+                    inventoryUnit.getProductId(), request.quantity(), inventoryUnit.getAvailableQuantity()));
+
         }
 
         inventoryUnit.setReservedQuantity(inventoryUnit.getReservedQuantity() + request.quantity());
@@ -106,5 +105,21 @@ public class InventoryServiceImpl implements InventoryService {
                     log.warn("{} NotFoundException", productId);
                     return new NotFoundException(String.format("NotFoundException %d ", productId));
                 });
+    }
+
+    @Override
+    public ReserveResponse releaseProductReservation(ReleaseRequest request) {
+        log.trace("releaseProductReservation {}", request);
+        InventoryUnit inventoryUnit = downloadInventoryUnit(request.productId());
+
+        if (request.quantity() > inventoryUnit.getReservedQuantity()) {
+            log.warn("request.quantity {} > inventoryUnit.getReservedQuantity {}", request.quantity(), inventoryUnit.getReservedQuantity() );
+            throw new IllegalArgumentException(String.format("request.quantity %d  > inventoryUnit.getReservedQuantity %d", request.quantity(), inventoryUnit.getReservedQuantity()));
+        }
+
+        inventoryUnit.setReservedQuantity(inventoryUnit.getReservedQuantity() - request.quantity());
+        inventoryUnit.setAvailableQuantity(inventoryUnit.getAvailableQuantity() + request.quantity());
+        InventoryUnit savedInventoryUnit = inventoryRepository.save(inventoryUnit);
+        return new ReserveResponse(true, savedInventoryUnit.getAvailableQuantity(), "Товар снят с резерва");
     }
 }

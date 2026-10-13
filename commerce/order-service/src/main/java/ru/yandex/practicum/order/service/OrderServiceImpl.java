@@ -3,13 +3,16 @@ package ru.yandex.practicum.order.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.order.dto.*;
 import ru.yandex.practicum.order.entity.*;
 import ru.yandex.practicum.order.exception.NotFoundException;
+import ru.yandex.practicum.order.feign.ProductDto;
 import ru.yandex.practicum.order.repository.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -22,29 +25,18 @@ public class OrderServiceImpl implements OrderService {
         log.trace("getAllOrders");
         List<Order> orders = orderRepository.findAll();
         log.debug("OK {}", orders);
-        return getOrderDtoList(orders);
+        return buildOrderDtoList(orders);
     }
 
     @Override
-    public OrderDto createOrder(CreateOrderRequest request) {
-        log.trace("createOrder {}", request);
-
-        BigDecimal totalPrice = request.items().stream()
-                .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        Order order = OrderMapper.toOrder(request, totalPrice);
-
-        for (OrderItemRequest itemRequest : request.items()) {
-            OrderItem orderItem = OrderItemMapper.toOrderItem(itemRequest);
-            orderItem.setOrder(order);
-            order.getItems().add(orderItem);
-        }
-
+    @Transactional
+    public OrderDto saveOrder(CreateOrderRequest request, Map<Long, ProductDto> productsMap) {
+        log.trace("Инициировано сохранение заказа");
+        Order order = buildOrder(request, productsMap);
         Order savedOrder = orderRepository.save(order);
-        log.debug("OK {}", savedOrder);
-
-        List<OrderItemDto> savedOrderItemList = getOrderItemDtoList(savedOrder);
-        return OrderMapper.toOrderDto(savedOrder, savedOrderItemList);
+        log.debug("Сохранен заказ {}", savedOrder);
+        List<OrderItemDto> savedOrderItemDtoList = buildOrderItemDtoList(savedOrder);
+        return OrderMapper.toOrderDto(savedOrder, savedOrderItemDtoList);
     }
 
     @Override
@@ -56,7 +48,7 @@ public class OrderServiceImpl implements OrderService {
                     return new NotFoundException(String.format("id %d NotFound", orderId));
                 });
         log.debug("OK {}", order);
-        List<OrderItemDto> orderItemList = getOrderItemDtoList(order);
+        List<OrderItemDto> orderItemList = buildOrderItemDtoList(order);
         return OrderMapper.toOrderDto(order, orderItemList);
     }
 
@@ -65,21 +57,41 @@ public class OrderServiceImpl implements OrderService {
         log.trace("getCustomersOrders {}", email);
         List<Order> orders = orderRepository.findByCustomerEmail(email);
         log.debug("OK {}", orders);
-        return getOrderDtoList(orders);
+        return buildOrderDtoList(orders);
     }
 
-    private List<OrderDto> getOrderDtoList(List<Order> orders) {
+    private List<OrderDto> buildOrderDtoList(List<Order> orders) {
         return orders.stream()
                 .map(order -> {
-                    List<OrderItemDto> orderItems = getOrderItemDtoList(order);
+                    List<OrderItemDto> orderItems = buildOrderItemDtoList(order);
                     return OrderMapper.toOrderDto(order, orderItems);
                 })
                 .toList();
     }
 
-    private List<OrderItemDto> getOrderItemDtoList(Order order) {
+    private List<OrderItemDto> buildOrderItemDtoList(Order order) {
         return order.getItems().stream()
                 .map(OrderItemMapper::toOrderItemDto)
                 .toList();
+    }
+
+    private Order buildOrder(CreateOrderRequest request, Map<Long, ProductDto> productsMap) {
+        Order order = OrderMapper.toOrder(request);
+
+        for (OrderItemRequest itemRequest : request.items()) {
+            ProductDto productDto = productsMap.get(itemRequest.productId());
+            OrderItem orderItem = OrderItemMapper.toOrderItem(itemRequest);
+            orderItem.setProductName(productDto.name());
+            orderItem.setPrice(productDto.price());
+            order.getItems().add(orderItem);
+        }
+
+        BigDecimal totalPrice = order.getItems().stream()
+                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        order.setTotalPrice(totalPrice);
+
+        return order;
     }
 }

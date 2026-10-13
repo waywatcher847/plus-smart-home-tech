@@ -3,21 +3,22 @@ package ru.yandex.practicum.order.repository;
 import ru.yandex.practicum.order.dto.CreateOrderRequest;
 import ru.yandex.practicum.order.dto.OrderDto;
 import ru.yandex.practicum.order.dto.OrderItemDto;
+import ru.yandex.practicum.order.dto.OrderStatuses;
 import ru.yandex.practicum.order.entity.Order;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class OrderMapper {
 
-    public static Order toOrder(CreateOrderRequest request, BigDecimal totalPrice) {
+    public static Order toOrder(CreateOrderRequest request) {
         return Order.builder()
                 .customerName(request.customerName())
                 .customerEmail(request.customerEmail())
-                .status("CREATED").totalPrice(totalPrice)
+                .status(OrderStatuses.CONFIRMED.name())
                 .statusDetails("Создан новый заказ")
-                .createdAt(LocalDateTime.now()).build();
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 
     public static OrderDto toOrderDto(Order order, List<OrderItemDto> itemDtoList) {
