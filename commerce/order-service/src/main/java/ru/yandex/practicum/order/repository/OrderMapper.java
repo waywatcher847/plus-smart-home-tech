@@ -3,7 +3,7 @@ package ru.yandex.practicum.order.repository;
 import ru.yandex.practicum.order.dto.CreateOrderRequest;
 import ru.yandex.practicum.order.dto.OrderDto;
 import ru.yandex.practicum.order.dto.OrderItemDto;
-import ru.yandex.practicum.order.dto.OrderStatuses;
+import ru.yandex.practicum.order.dto.OrderStatus;
 import ru.yandex.practicum.order.entity.Order;
 
 import java.time.LocalDateTime;
@@ -11,11 +11,11 @@ import java.util.List;
 
 public class OrderMapper {
 
-    public static Order toOrder(CreateOrderRequest request) {
+    public static Order toOrder(CreateOrderRequest request, OrderStatus status) {
         return Order.builder()
                 .customerName(request.customerName())
                 .customerEmail(request.customerEmail())
-                .status(OrderStatuses.CONFIRMED.name())
+                .status(status.name())
                 .statusDetails("Создан новый заказ")
                 .createdAt(LocalDateTime.now())
                 .build();

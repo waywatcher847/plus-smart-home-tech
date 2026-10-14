@@ -34,7 +34,6 @@ class OrderOrchestrationServiceTests {
     @InjectMocks
     private OrderOrchestrationService orderOrchestrationService;
 
-
     @Test
     void createOrder_NotFound_Exception() {
         OrderItemRequest itemRequest = new OrderItemRequest(100L, 1);
@@ -51,7 +50,7 @@ class OrderOrchestrationServiceTests {
         assertThrows(OrderProcessingException.class,
                 () -> orderOrchestrationService.createOrder(request));
 
-        verify(orderService, never()).saveOrder(any(), any());
+        verify(orderService, never()).saveOrder(any(), any(), any());
     }
 
     @Test
@@ -84,9 +83,10 @@ class OrderOrchestrationServiceTests {
 
         verify(inventoryClient).releaseStock(argThat(rr ->
                 rr.productId() == 100L && rr.quantity() == 2));
-        verify(orderService, never()).saveOrder(any(), any());
+
+        verify(orderService, never()).saveOrder(any(), any(), any());
     }
-    
+
     @Test
     void createOrder_success() {
         OrderItemRequest itemRequest = new OrderItemRequest(100L, 2);
@@ -106,12 +106,12 @@ class OrderOrchestrationServiceTests {
                 .customerName("aaa")
                 .customerEmail("asdasd@asdasd")
                 .totalPrice(new BigDecimal("39998.00"))
-                .statusDetails("Ожидает резервации") 
+                .statusDetails("Ожидает резервации")
                 .createdAt(LocalDateTime.now())
                 .items(List.of())
                 .build();
 
-        when(orderService.saveOrder(eq(request), any()))
+        when(orderService.saveOrder(eq(request), any(), any()))
                 .thenReturn(expectedDto);
 
         OrderDto result = orderOrchestrationService.createOrder(request);
@@ -120,8 +120,9 @@ class OrderOrchestrationServiceTests {
         verify(productClient).getProductById(100L);
         verify(inventoryClient).reserveStock(argThat(rr ->
                 rr.productId() == 100L && rr.quantity() == 2));
+
         verify(orderService).saveOrder(eq(request), argThat(map ->
-                map.size() == 1 && map.containsKey(100L)));
+                map.size() == 1 && map.containsKey(100L)), any());
     }
 
     @Test
@@ -149,7 +150,7 @@ class OrderOrchestrationServiceTests {
                 .items(List.of())
                 .build();
 
-        when(orderService.saveOrder(eq(request), any())).thenReturn(expectedDto);
+        when(orderService.saveOrder(eq(request), any(), any())).thenReturn(expectedDto);
 
         OrderDto result = orderOrchestrationService.createOrder(request);
 
@@ -172,7 +173,7 @@ class OrderOrchestrationServiceTests {
                 () -> orderOrchestrationService.createOrder(request));
 
         verify(inventoryClient, never()).reserveStock(any());
-        verify(orderService, never()).saveOrder(any(), any());
+        verify(orderService, never()).saveOrder(any(), any(), any());
     }
 
     @Test
@@ -191,6 +192,6 @@ class OrderOrchestrationServiceTests {
         assertThat(ex.getMessage()).contains("100");
         assertThat(ex.getMessage()).contains("сняты с продажи");
         verify(inventoryClient, never()).reserveStock(any());
-        verify(orderService, never()).saveOrder(any(), any());
+        verify(orderService, never()).saveOrder(any(), any(), any());
     }
 }

@@ -30,13 +30,15 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderDto saveOrder(CreateOrderRequest request, Map<Long, ProductDto> productsMap) {
-        log.trace("Инициировано сохранение заказа");
-        Order order = buildOrder(request, productsMap);
+    public OrderDto saveOrder(CreateOrderRequest request, Map<Long, ProductDto> productsMap, OrderStatus status) {
+        log.trace("saveOrder {}, {}, {}", request, productsMap, status);
+        Order order = buildOrder(request, productsMap, status);
         Order savedOrder = orderRepository.save(order);
-        log.debug("Сохранен заказ {}", savedOrder);
+        log.debug("OK saved {}", savedOrder);
         List<OrderItemDto> savedOrderItemDtoList = buildOrderItemDtoList(savedOrder);
-        return OrderMapper.toOrderDto(savedOrder, savedOrderItemDtoList);
+        OrderDto orderDto = OrderMapper.toOrderDto(savedOrder, savedOrderItemDtoList);
+        log.debug("OK {}", orderDto);
+        return orderDto;
     }
 
     @Override
@@ -44,8 +46,8 @@ public class OrderServiceImpl implements OrderService {
         log.trace("getOrderById {}", orderId);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> {
-                    log.warn("id {} NotFound", orderId);
-                    return new NotFoundException(String.format("id %d NotFound", orderId));
+                    log.warn("Order with id {} not found", orderId);
+                    return new NotFoundException(String.format("Order with id %d not found", orderId));
                 });
         log.debug("OK {}", order);
         List<OrderItemDto> orderItemList = buildOrderItemDtoList(order);
@@ -75,8 +77,8 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
     }
 
-    private Order buildOrder(CreateOrderRequest request, Map<Long, ProductDto> productsMap) {
-        Order order = OrderMapper.toOrder(request);
+    private Order buildOrder(CreateOrderRequest request, Map<Long, ProductDto> productsMap, OrderStatus status) {
+        Order order = OrderMapper.toOrder(request, status);
 
         for (OrderItemRequest itemRequest : request.items()) {
             ProductDto productDto = productsMap.get(itemRequest.productId());
