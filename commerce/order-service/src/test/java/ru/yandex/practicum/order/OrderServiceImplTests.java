@@ -103,7 +103,7 @@ class OrderServiceImplTests {
 
         when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
-        OrderDto result = orderService.saveOrder(request, productsMap);
+        OrderDto result = orderService.saveOrder(request, productsMap, OrderStatus.CONFIRMED);
 
         assertThat(result.id()).isEqualTo(1L);
         assertThat(result.items()).hasSize(1);
@@ -144,7 +144,7 @@ class OrderServiceImplTests {
 
         when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
-        OrderDto result = orderService.saveOrder(request, productsMap);
+        OrderDto result = orderService.saveOrder(request, productsMap, OrderStatus.CONFIRMED);
 
         assertThat(result.totalPrice()).isEqualByComparingTo(new BigDecimal("51500.00"));
         assertThat(result.items()).hasSize(2);
@@ -176,7 +176,7 @@ class OrderServiceImplTests {
 
         when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
 
-        orderService.saveOrder(request, productsMap);
+        orderService.saveOrder(request, productsMap, OrderStatus.CONFIRMED);
 
         verify(orderRepository).save(argThat(order -> {
             List<OrderItem> items = order.getItems();
@@ -185,8 +185,8 @@ class OrderServiceImplTests {
                     && items.get(0).getOrder() == order;
         }));
     }
-
     @Test
+
     void getOrderById_success() {
         Order order = buildOrder(10L, "asdasd@asdasd.com", BigDecimal.valueOf(500.00));
 
