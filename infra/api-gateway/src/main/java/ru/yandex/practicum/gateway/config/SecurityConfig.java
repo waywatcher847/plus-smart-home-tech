@@ -78,10 +78,17 @@ public class SecurityConfig {
     }
 
     private UserDetails createUserDetails(UsersProperties.UserData userData, PasswordEncoder passwordEncoder) {
+        String password = userData.getPassword();
+        String encodedPassword = isHash(password) ? password : passwordEncoder.encode(password);
+
         return User.builder()
                 .username(userData.getUsername())
-                .password(passwordEncoder.encode(userData.getPassword()))
+                .password(encodedPassword)
                 .roles(userData.getRoles().toArray(String[]::new))
                 .build();
+    }
+
+    private boolean isHash(String password) {
+        return password != null && password.matches("^\\$2[ayb]\\$.{56}$");
     }
 }
