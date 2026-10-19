@@ -156,7 +156,7 @@ public class OrderOrchestrationService {
                         String.format("Product #%d (pending check)", productId),
                         "Manual check required",
                         BigDecimal.ZERO,
-                        false
+                        true
                 );
             }
         };
