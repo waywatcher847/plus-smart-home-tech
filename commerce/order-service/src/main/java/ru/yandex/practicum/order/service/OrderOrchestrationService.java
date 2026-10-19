@@ -15,6 +15,7 @@ import ru.yandex.practicum.order.feign.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -183,15 +184,17 @@ public class OrderOrchestrationService {
 
     private void rollbackReserve(List<ReserveRequest> reservedOrders) {
         log.trace("rollbackReserve {}", reservedOrders);
+
+        Collections.reverse(reservedOrders);
+
         reservedOrders.stream()
-                .map(reserveResponse -> new ReleaseRequest(
-                        reserveResponse.productId(),
-                        reserveResponse.quantity()
+                .map(reserveRequest -> new ReleaseRequest(
+                        reserveRequest.productId(),
+                        reserveRequest.quantity()
                 ))
                 .forEach(this::releaseProduct);
         log.debug("OK rolled back {}", reservedOrders);
     }
-
     private void releaseProduct(ReleaseRequest request) {
         log.trace("releaseProduct {}", request);
         RemoteCallResult<Void> result = inventoryAdapter.releaseStock(request);
